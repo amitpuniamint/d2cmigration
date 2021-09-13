@@ -1,0 +1,60 @@
+{% extends 'api/base.html' %}
+{% load static %}
+{% load tz %}
+{% block title %}D2C Migration: RollBack Verification{% endblock title %}
+{% block css %}{% endblock css%}
+{% block userflex %}	
+{% endblock userflex %}
+{% block content %}
+<div class="app-content content">
+	<div class="content-overlay"></div>
+    <div class="header-navbar-shadow"></div>
+    <div class="content-wrapper">
+    	<div class="content-body">
+    		<div class="card">
+    			<div class="card-body">
+    				<div class='row'>
+                        {% if messages %}
+                        <div class='col-md-12'>
+                            {% for message in messages %}
+                                {% if message.tags == 'error' %}
+                                <div class="alert alert-danger" role="alert">{{ message }}</div>
+                                {% elif message.tags == 'success' %}
+                                <div class="alert alert-success" role="alert">{{ message }}</div>
+                                {% else %}
+                                <div class="alert alert-info" role="alert">{{ message }}</div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="col-md-12" id='create_batch_div' >      
+                            <h6 class="card-title" >D2C Migration : RollBack Authentication</h6>
+                            <form action="" method="post">
+                                {% csrf_token %}
+                            <div class='row'>
+                            	<div class="col-md-6" style="padding-right: 10px">
+                                	<div class="form-group">
+                                    	<label for="firno">Password</label>
+                                        	<input type="password" id="password" class="form-control" name="password" placeholder="Please Enter Password." >
+                                    	<label><code>**</code>Please Enter Password For Verification</label>
+                                    	<label><code>**</code>Note: Only One time You can input Password.</label>
+                                	</div>
+                            	</div>
+                            	<div class="col-md-6" style="padding-right: 10px">
+                                	<div class="form-group">
+                                    	<label for="firno">RollBack Reason</label>
+                                        	<input type="text" id="rollback_reason" class="form-control" name="rollback_reason" placeholder="Please Enter Password." >
+                                    	<label><code>**</code>Please Enter Password For Verification</label>
+                                	</div>
+                            	</div>
+                            	<button class='btn btn-danger' style="float:right;">Verification</button>
+                            </div>
+                            </form>
+    				    </div>
+    			    </div>
+    		    </div>
+    	    </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,63 @@
+{% extends 'api/base.html' %}
+{% load static %}
+{% load tz %}
+{% block title %}D2C Migration: Migration Verification{% endblock title %}
+{% block css %}{% endblock css%}
+{% block userflex %}	
+{% endblock userflex %}
+{% block content %}
+<div class="app-content content">
+	<div class="content-overlay"></div>
+    <div class="header-navbar-shadow"></div>
+    <div class="content-wrapper">
+    	<div class="content-body">
+    		<div class="card">
+    			<div class="card-body">
+    				<div class='row'>
+                        {% if messages %}
+                        <div class='col-md-12'>
+                            {% for message in messages %}
+                                {% if message.tags == 'error' %}
+                                <div class="alert alert-danger" role="alert">{{ message }}</div>
+                                {% elif message.tags == 'success' %}
+                                <div class="alert alert-success" role="alert">{{ message }}</div>
+                                {% else %}
+                                <div class="alert alert-info" role="alert">{{ message }}</div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="col-md-12" id='create_batch_div' >      
+                            <h6 class="card-title" >D2C Migration : Migration Authentication</h6>
+                            <form action="" method="post">
+                                {% csrf_token %}
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="password">Password</label><code>**</code>
+                                        <input type="password" id="password" class="form-control" name="password" placeholder="Please Enter Password.">
+                                        <label><code>**</code>Please Enter Password For Verification</label>
+                                        <label><code>**</code>Note: Only 4 Attempt is Allowed.</label>
+                                    </div>
+                                </div>    
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="migration_method">Method</label><code>**</code>
+                                        <select class="custom-select form-control" id="migration_method" name="migration_method" required="">
+                                            <option value="F" selected>FIR WISE</option>
+                                            <option value="T">TABLE WISE</option>
+                                        </select>
+                                        <label><code>**</code>Choose Migration Method</label>
+                                    </div>
+                                </div>    
+                            </div>
+                            <button class='btn btn-danger' style="float:right;">Verification</button>
+                            </form>
+    				    </div>
+    			    </div>
+    		    </div>
+    	    </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

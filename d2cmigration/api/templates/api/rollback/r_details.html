@@ -1,0 +1,403 @@
+{% extends 'api/base.html' %}
+{% load static %}
+{% load tz %}
+{% block title %}D2C Migration: RollBack Migration{% endblock title %}
+{% block css %}
+{% endblock css%}
+{% block content %}
+<div class="app-content content">
+	<div class="content-overlay"></div>
+    <div class="header-navbar-shadow"></div>
+    <div class="content-wrapper">    
+    	<div class="content-body">
+    	<div class="card">
+    			<div class="card-body">
+                    <div class='row'>
+                        <div class='col-md-12'>
+                            <div class='col-md-6' style="float: left;">
+                                <h6 class="card-title" >D2C Migration : RollBack Details</h6>
+                                <h7 class="card-title" id='rollback_system_message' style="color: red;"></h7>
+                                <input id='is_ongoing' value='{{query_set.status}}'  hidden>
+                                <input id='history_pk' value='{{query_set.pk}}'  hidden>
+                                <input id='line_length' value='0'  hidden>
+                                {% csrf_token %}
+                            </div>
+                            <div class='col-md-6' style="float: right;">
+                                <input id='is_rollback_running' value='{{query_set.status}}' hidden>
+                                {% if is_persent_rollback_process is False and query_set.status == 0 %} 
+                                <button style="float:right;" class='btn btn-success' id='rollback_action_div_start'>Start RollBack</button>   
+                                {% elif is_persent_rollback_process is True and query_set.status == 0 %}
+                                <button style="float:right;" class='btn btn-warning'>Queue</button>
+                                {% elif is_persent_rollback_process is True and query_set.status == 1 %} 
+                                <button style="float:right;" class='btn btn-danger'  id='rollback_action_div_stop' >Stop RollBack</button>
+                                {% endif %}
+                                
+                                <span style="float:right;" id='rollback_complete'>
+                                    {% if query_set.status == 2 %} 
+                                    <code style="color:green">** RollBack SuccessFull Complete**</code>
+                                    {% elif query_set.status == 3 %} 
+                                    <code>** RollBack Failed **</code>
+                                    {% elif query_set.status == 4 %} 
+                                    <code>** RollBack Cancle By User **</code>
+                                    {% elif query_set.status == 5 %} 
+                                    <code>** RollBack Abort By User **</code>
+                                    {% endif %}
+                                </span> 
+                            </div>
+                            
+                        </div>
+                        <div class='col-md-12' style='margin-top: 20px;'> 
+                            <div class="row"> 
+                                <div class='col-md-12'>
+                                    <button class='btn btn-success' style="float:right; " id='batch_details_hide'>Hide Details</button>
+                                    <button class='btn btn-danger' style="float:right; display: none;" id='batch_details_show'>Show Details</button>    
+                                    <h6 class="card-title">RollBack Batch Details</h6>
+                                </div>
+                            </div>
+                            <div class="col-md-12" id='batch_details'>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <span>RollBack Batch Reg Num :</span>
+                                        <span id='batch_sr_num'>{% if '[' in query_set.batch_sr_num %} Multiple Batch <a><code style='color: red' class='roll_batch_show' name='{{forloop.counter}}'>Show</code></a>
+                                        <label class='rollback_batch_number_{{forloop.counter}} rollback_batch_number' style="display:none;" >{{query_set.batch_sr_num}}</label>
+                                        {% else %} {{query_set.batch_sr_num}} {% endif %}</span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <span>RollBack Fir Count :</span>
+                                        <span>{{rollback_fir_count}}</span>
+                                        <a><span id='show_fir' ><code> Show Details</code></span></a>
+                                        <a><span id='hide_fir' style="display:none;"><code>Hide Details</code></span></a>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <span>Created User:</span>
+                                        <span>{{create_username}}</span>
+                                    </div>
+                                    {% if query_set.status == 4 %}
+                                    <div class="col-md-6">
+                                        <span>Cancle By:</span>
+                                        <span>{{cancle_username}}</span>
+                                    </div>
+                                    {% endif %}
+                                    <div class="col-md-6">
+                                        <span>Creation Time :</span>
+                                        <span>{% localtime on %} {{query_set.create_time|date:'d-m-Y H:i:s'}} {% endlocaltime %}</span>
+                                    </div> 
+                                    {% if query_set.status != 0 and query_set.status != 1 %}
+                                    <div class="col-md-6">
+                                        <span>Status :</span>
+                                        <span>{% if query_set.status == 2 %}
+                                                <code style="color:green">Success</code>
+                                            {% elif query_set.status == 3 %}
+                                               <code>Failed</code>
+                                            {% elif query_set.status == 4 %}
+                                              <code>Cancle</code>
+                                            {% elif query_set.status == 5 %}
+                                                <code>Abort</code>
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    {% endif %}
+
+                                    {% if query_set.start_time != '' and query_set.start_time is not None %}
+                                    <div class="col-md-6">
+                                        <span>Start Time :</span>
+                                        <span>{% localtime on %} {{query_set.start_time|date:'d-m-Y H:i:s'}} {% endlocaltime %}</span>
+                                    </div>
+                                    {% endif %}
+                                    {% if query_set.complete_time != '' and query_set.complete_time is not None %}
+                                    <div class="col-md-6">
+                                        <span>End Time :</span>
+                                        <span>{% localtime on %} {{query_set.complete_time|date:'d-m-Y H:i:s'}} {% endlocaltime %}</span>
+                                    </div>
+                                    {% endif %}
+                                    <div class="col-md-6">
+                                        <span>RollBack Reason :</span>
+                                        <span>{{query_set.rollback_reason}}</span>
+                                    </div>
+                                    {% if query_set.status == 3 %}
+                                    <div class="col-md-6">
+                                        <span>Failed Reason :</span>
+                                        <span>{{query_set.failed_reason}}</span>
+                                    </div>
+                                    {% endif %}
+                                    <div class="col-md-12" id='fir_details'  style="display:none;">
+                                        <input id='fir_details_status' value="0" hidden>
+                                        <p id='file_details_error'></p>
+                                        <div class="table-responsive" id='fir_details_table' style="margin-top: 10px;margin-botton: 10px;overflow-y: scroll; min-height: 200px; max-height: 300px; ">
+                                            <table class="table mb-0" >
+                                                <thead class="thead-dark">
+                                                    <tr>
+                                                        <th scope="col">ID</th>
+                                                        <th scope="col">Batch Number</th>
+                                                        <th scope="col">FIR Number</th>
+                                                        <th scope="col">Sate</th>
+                                                        <th scope="col">District</th>
+                                                        <th scope="col">PS Code</th>
+                                                        <th scope="col">Year</th>
+                                                        <th scope="col">Status</th>
+                                                        
+                                                    </tr>
+                                                </thead>
+                                                <tbody id='fir_details_table_tbody'></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class='col-md-12' id='rollback_logs'>
+                            <hr>
+                            <button class='btn btn-success' style="float:right; display: none;" id='logs_details_hide'>Hide logs</button>
+                            <button class='btn btn-danger' style="float:right;" id='logs_details_show'>Show logs</button>    
+                            <h6 class="card-title">Process logs</h6>  
+                            <pre id='data_in' style=' display: none; overflow-y: scroll;color:white;background: black;min-height: 100px;max-height:300px; padding-left: 10px;width: 100%;margin-top: 7%;'>
+                                
+                            </pre>    
+                        </div>
+                    </div>
+                </div>
+    	</div>
+    </div>
+    </div>
+ 
+</div>
+
+
+{% endblock content %}
+{% block page_js %}
+<script type="text/javascript">
+function hide_details(){
+    $('#batch_details_show').show();
+    $('#batch_details_hide').hide();
+    $('#fir_details').hide();
+    $('#batch_details').hide();
+    $('#show_fir').show()
+    $('#hide_fir').hide()
+
+}
+
+function hide_logs(){
+    $('#logs_details_show').show();
+    $('#logs_details_hide').hide();
+    $('#data_in').hide();
+}
+
+$('#show_fir').click(function(){
+    var pk = $('#history_pk').val()
+    var current_check = $('#fir_details_status').val()
+    if (current_check == 0){
+        get_rollback_fir_list(pk)    
+    }
+    $('#fir_details').show();
+    $('#show_fir').hide()
+    $('#hide_fir').show()
+})
+$('#hide_fir').click(function(){
+    $('#fir_details').hide();
+    $('#show_fir').show()
+    $('#hide_fir').hide()
+})
+
+
+$('#batch_details_hide').click(function(){
+    hide_logs();
+    hide_details();
+})
+
+$('#batch_details_show').click(function(){
+    hide_logs()
+    $('#batch_details_show').hide();
+    $('#batch_details_hide').show();
+    $('#batch_details').show();
+})
+
+$('#logs_details_show').click(function(){
+    hide_details()
+    $('#logs_details_show').hide();
+    $('#logs_details_hide').show();
+    $('#data_in').show();
+})
+
+$('#logs_details_hide').click(function(){
+    hide_details();
+    hide_logs();
+})
+
+$('.roll_batch_show').click(function(){
+    id_number = $(this).attr('name')
+    class_name = 'rollback_batch_number_'+id_number
+    value = $(this).text()
+    if (value == 'Show'){
+        $(this).text('Hide')
+        $('.'+class_name).show()
+    }else{
+        $(this).text('Show')
+        $('.'+class_name).hide()
+    }
+})
+</script>
+
+<script type="text/javascript">
+// Get RollBack FIR List 
+function get_rollback_fir_list(pk){
+    $('#rollback_system_message').text('Please Wait, While We are fatching Record from Server.........');
+    $('#fir_details_status').val('2')
+    var pk = pk
+    var urls = '/rollback/r_fir_details/'+pk+'/'
+    var csrftoken = $('input[name="csrfmiddlewaretoken"]').val()
+    var AJAX_RES = $.ajax({
+        type:"POST",
+        url:urls,
+        data:{'pk':pk,'csrfmiddlewaretoken':csrftoken},
+    }).done(function(result,status,AJAX_FILE){
+        if (result['status'] == true){
+            $('#rollback_system_message').text('')
+            console.log(result['data'])
+            jQuery.each(result['data'], function (i,val) {
+                $('#fir_details_table_tbody').append('<tr><td>'+(i+1)+'</td><td>'+val[0]+'</td><td>'+val[1]+'</td><td>'+val[2]+'</td><td>'+val[3]+'</td><td>'+val[4]+'</td><td>'+val[5]+'</td><td>'+val[6]+'</td></tr>')
+                });
+            $('#fir_details_status').val('1')
+        }else{
+            $('#rollback_system_message').html("<code>*** Unable to Get Data from Server.***</code>");
+            setTimeout(function(){$('#rollback_system_message').hide(5000);},10000);
+            $('#fir_details_status').val('0')
+        }
+        console.log(result)
+    }).fail(function(AJAX_FILE,status,err){
+        $('#rollback_system_message').html("<code>*** Unable to Get Data from Server.***</code>");
+        setTimeout(function(){$('#rollback_system_message').hide(5000);},10000);
+        $('#fir_details_status').val('0')
+    })
+}
+</script>
+
+<script type="text/javascript">
+/* File Read Script */
+function get_rollback_log(){
+    var line_length = $('#line_length').val();
+    var pk = $('#history_pk').val();
+    var csrftoken = $('input[name="csrfmiddlewaretoken"]').val();
+    const urls = '/rollback/log_file/'+pk+'/'+line_length+'/';
+    var AJAX_FILE = $.ajax({
+        type:'POST',
+        url: urls,
+        data:{'pk':pk,'csrfmiddlewaretoken':csrftoken,'line_number':line_length},
+    }).done(function(result,status,AJAX_FILE){
+        console.log(AJAX_FILE)
+        if(result['status']==true){
+            jQuery.each(result['data'], function (i,val) {
+                    $('#data_in').append(val)
+                    });
+            $('#line_length').val(result['total_line']); // update total line  
+            $('#data_in').animate({scrollTop: $('#data_in').prop("scrollHeight")}, 200); // Scroll Button
+            var is_rollback_running = result['is_rollback_running']
+            $('#is_rollback_running').val(is_rollback_running);
+            console.log('error')
+            if(is_rollback_running == 1){setTimeout(get_rollback_log, 1000);
+                    }
+            else if(is_rollback_running == 2){
+                $('#rollback_action_div_stop').hide();
+                $('#rollback_complete').html("<code style='color:green'>** RollBack Successful Complete **</code>");
+            }
+            else if(is_rollback_running == 3){
+                $('#rollback_action_div_stop').hide();
+                $('#rollback_complete').html("<code>RollBack Failed **</code>");
+            }
+            else if(is_rollback_running == 3){
+                $('#rollback_action_div_stop').hide();
+                $('#rollback_complete').html("<code>RollBack Failed **</code>");
+            }
+            else if(is_rollback_running == 5){
+                $('#rollback_action_div_stop').hide();
+                $('#rollback_complete').html("<code>RollBack Abort **</code>");
+            }
+        }else{
+            $('#data_in').append("RollBack Process is Run But Unable to fatch data from read file .Error:"+result['error']+'.<br/>');
+        }
+    }).fail(function(AJAX_FILE,status,err){
+        $('#data_in').append('RollBack Process is Run But Unable to fatch data from read file .Error:'+err+'.<br/>');
+        $('#data_in').animate({scrollTop: $('#data_in').prop("scrollHeight")}, 200); // Scroll Button
+    })        
+}
+
+$(document).ready(function(){
+    get_rollback_log()
+ })
+
+</script>
+<script type="text/javascript">
+function rollback_system_message_f(){
+    $('#rollback_system_message').html('');
+    $('#rollback_system_message').hide('');
+    $('#rollback_system_message').show('');
+}
+/* Start Button */
+function start_rollback(){
+    rollback_system_message_f()
+    var pk = $('#history_pk').val();
+    var csrftoken = $('input[name="csrfmiddlewaretoken"]').val()
+    var AJAX_FILE = $.ajax({
+        type:"POST",
+        url:"/rollback/start/"+pk+"/",
+        data:{'pk':pk,'csrfmiddlewaretoken':csrftoken},
+    }).done(function(result,status,AJAX_FILE){
+        if(result['status'] == true){
+            $('#rollback_system_message').append("<code style='color:green;'>***"+result['messages']+" ***</code>");
+            setTimeout(function(){$('#rollback_system_message').hide(5000);},10000);
+            $('#rollback_action_div_stop').show();
+            $('#rollback_action_div_start').hide();
+            $('#is_rollback_running').val('1');
+            get_rollback_log();
+        }else{
+            $('#rollback_system_message').html("<code>*** "+result['error']+" ***</code>");
+            setTimeout(function(){$('#rollback_system_message').hide(5000);},10000);
+        }
+    }).fail(function(AJAX_FILE,status,err){
+        $('#rollback_system_message').html("<code>*** Unable to Start RollBack. Due to System Error.Please contact With Technical Team.***</code>");
+        setTimeout(function(){$('#rollback_system_message').hide(5000);},10000);
+    })
+}
+
+function stop_rollback(){
+    rollback_system_message_f()
+    var pk = $('#history_pk').val();
+    var csrftoken = $('input[name="csrfmiddlewaretoken"]').val()
+    var AJAX_FILE = $.ajax({
+        type:"POST",
+        url:"/rollback/stop/"+pk+"/",
+        data:{'pk':pk,'csrfmiddlewaretoken':csrftoken},
+    }).done(function(result,status,AJAX_FILE){
+        if(result['status'] == true){
+            $('#rollback_system_message').append("<code>***"+result['messages']+" ***</code>");
+            setTimeout(function(){$('#rollback_system_message').hide(5000);},10000);
+            $('#rollback_action_div_stop').hide();
+            $('#rollback_action_div_start').hide();
+        }else{
+            $('#rollback_system_message').html("<code>***"+result['error']+"***</code>");
+            setTimeout(function(){$('#migration_system_message').hide(5000);},10000);
+        }
+    }).fail(function(AJAX_FILE,status,err){
+        $('#rollback_system_message').html("<code>*** Unable to Stop RollBack. Due to System Error.Please contact With Technical Team.***</code>");
+        setTimeout(function(){$('#rollback_system_message').hide(5000);},10000);
+    })
+}
+// Migration Button Start
+$('#rollback_action_div_start').click( function(){
+    hide_details()
+    $('#logs_details_hide').show();
+    $('#logs_details_show').hide();
+    $('#data_in').show();
+    start_rollback()
+    });
+
+// Migration Button Abort
+$('#rollback_action_div_stop').click( function(){
+    hide_details()
+    $('#logs_details_hide').show();
+    $('#logs_details_show').hide();
+    $('#data_in').show();
+    stop_rollback()
+});
+/* Stop Button */
+</script>
+{% endblock page_js%}

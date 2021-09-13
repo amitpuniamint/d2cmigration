@@ -1,0 +1,88 @@
+{% extends 'api/base.html'%}
+{% load static %}
+{% load tz %}
+{% block title %}D2C Migration: Migration History{% endblock title %}
+{% block css %}
+<style type="text/css">
+    th {
+        position: -webkit-sticky;
+        position: sticky;
+        top: 0;
+        z-index: 2;
+    }
+    
+</style>
+{% endblock css%}
+{% block content %}
+
+<div class="app-content content">
+	<div class="content-overlay"></div>
+    <div class="header-navbar-shadow"></div>
+    <div class="content-wrapper">    
+    	<div class="content-body">
+    	<div class="card">
+    		<div class="card-body">
+                <h6 class="card-title" >DigiCAS Migration : Batch History</h6>
+                <div class="row">
+                    <div class="col-md-12">
+                        <h7 class="card-title" >Total Batch:{{query_set.count}}</h7>
+                        <div class="table-responsive" style="margin-top: 10px;margin-botton: 10px;overflow-y: scroll; max-height: 400px; display:flex;">
+                            <table class="table mb-0" >
+                                <thead class="thead-dark" style="position: sticky;">
+                                    <tr>
+                                        <th scope="col">SR.No.</th>
+                                        <th scope="col">Batch Number</th>
+                                        <th scope="col">CreationDate</th>
+                                        <th scope="col">StartDate</th>
+                                        <th scope="col">EndDate</th>
+                                        <th scope="col">Status</th>
+                                        <th scope="col">Details</th>
+                                    </tr>
+                                </thead>
+                                <tbody id='fir_details_table_tbody'>
+                                    {% if query_set %}
+                                        {% for item in query_set %}
+                                        <tr>
+                                            <td>{{forloop.counter}}</td>
+                                            <td>{{item.batch_sr_num}}</td>
+                                            <td>{{item.create_time}}</td>
+                                            <td>{{item.start_time  |default:'--'}}</td>
+                                            <td>{{item.complete_time  |default:'--'}}</td>
+                                            <td>
+                                            	{% if item.status == 0 %}
+                                            	<span style="color:green;font-size: 16px;">Created</span>
+                                            	{% elif item.status == 1 %}
+                                            	<span style="color:green;font-size: 16px;">On-Going</span>
+                                            	{% elif item.status == 2 %}
+                                            	<span style="color:green;font-size: 16px;">Success Complete</span>
+                                            	{% elif item.status == 3 %}
+                                            	<span style="color:red;font-size: 16px;">Failed</span>
+                                            	{% elif item.status == 4 %}
+                                            	<span style="color:red;font-size: 16px;">Cancle</span>
+                                            	{% elif item.status == 5 %}
+                                            	<span style="color:red;font-size: 16px;">Abort</span>
+                                            	{% endif %}
+                                            </td>
+                                            <td><a href="/migration/details/{{item.pk}}/True/">Details</a></td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                    <tr><th colspan="8">No Migration Bath Create till Now....</th></tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    	</div>
+    </div>
+    </div>
+    
+</div>
+{% endblock content %}
+{% block page_js %}
+<script type="text/javascript">
+    
+</script>
+{% endblock page_js%}

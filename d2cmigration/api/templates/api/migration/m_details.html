@@ -1,0 +1,176 @@
+{% extends 'api/base.html' %}
+{% load static %}
+{% load tz %}
+{% block title %}D2C Migration: Start Migration{% endblock title %}
+{% block css %}
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.css">
+{% endblock css%}
+{% block content %}
+<div class="app-content content">
+    <div class="content-overlay"></div>
+    <div class="header-navbar-shadow"></div>
+    <div class="content-wrapper">    
+        <div class="content-body">
+        <div class="card">
+                <div class="card-body">
+                    <div class='row'>
+                        <div class='col-md-12'>
+                            <div class='col-md-6' style="float: left;">
+                                <h6 class="card-title" >D2C Migration : Migration Process</h6>
+                                <h7 class="card-title" id='migration_system_message'></h7>
+                                <input id='is_ongoing' value='{{history_batch_query_set.status}}'  hidden>
+                                <input id='history_pk' value='{{history_batch_query_set.pk}}'  hidden>
+                                {% csrf_token %}
+                            </div>
+                            <div class='col-md-6' style="float: right;">
+                                <input id='is_migration_running' value='{{history_batch_query_set.status}}' hidden>
+                                <input id='is_queue' value='{{history_batch_query_set.status}}' hidden>
+                                <button style="float:right; {% if history_batch_query_set.status == 0 %} {% else %} display:none; {% endif %} " class='btn btn-success' id='migration_action_div_start'>Start Migration</button>   
+                                <button style="float:right; {% if history_batch_query_set.status == 1 %} {% else %} display:none; {% endif %} " class='btn btn-danger'  id='migration_action_div_stop' >Stop Migration</button> 
+                                <span style="float:right;" id='migration_complete'>
+                                    {% if history_batch_query_set.status == 2 %} 
+                                    <code style="color:green;font-size: 16px;font-style: italic;">**Migration SuccessFull Complete**</code>
+                                    {% elif history_batch_query_set.status == 3 %} 
+                                    <code style="font-size: 16px;font-style: italic;">**Migration Failed.**</code>
+                                    {% elif history_batch_query_set.status == 4 %} 
+                                    <code style="font-size: 16px;font-style: italic;">**Migration Cancle By User.**</code>
+                                    {% elif history_batch_query_set.status == 5 %}
+                                    <code style="font-size: 16px;font-style: italic;">**Migration Abort By User.**</code>
+                                    {% endif %}
+                                </span>      
+                            </div>
+                            
+                        </div>
+                        <div class='col-md-12' style='margin-top: 20px;'> 
+                            <div class="row"> 
+                                <div class='col-md-12'>
+                                    <button class='btn btn-success' style="float:right; " id='batch_details_hide'>Hide Details</button>
+                                    <button class='btn btn-danger' style="float:right; display: none;" id='batch_details_show'>Show Details</button>    
+                                    <h6 class="card-title">Migration Batch Details</h6>
+                                </div>
+                            </div>
+                            <div class="col-md-12" id='batch_details'>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <span>Migration Batch Sr No :</span>
+                                        <span id='batch_sr_num'>{{batch_query_set.batch_sr_num}}</span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <span>Fir Count :</span>
+                                        <span>{{batch_query_set.fir_sr_count}}</span>
+                                        <a><span id='show_fir' ><code> Show Details</code></span></a>
+                                        <a><span id='hide_fir' style="display:none;"><code>Hide Details</code></span></a>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <span>Migration Batch Current Status :</span>
+                                        <span>{{batch_query_set.get_current_status_display}}</span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <span>Created UserName:</span>
+                                        <span>{{history_batch_query_set.user|upper}}</span>
+                                    </div>
+                                    {% if history_batch_query_set.status == 4 %}
+                                    <div class="col-md-6">
+                                        <span>Cancle By:</span>
+                                        <span>{{history_batch_query_set.cancle_user|upper}}</span>
+                                    </div>
+                                    {% endif %}
+                                    <div class="col-md-6">
+                                        <span>Creation Time :</span>
+                                        <span>{% localtime on %} {{batch_query_set.create_time|date:'d-m-Y H:i:s'}} {% endlocaltime %}</span>
+                                    </div> 
+                                    {% if history_batch_query_set.status != 0 and history_batch_query_set.status != 1 %}
+                                    <div class="col-md-6">
+                                        <span>Status :</span>
+                                        <span>{% if history_batch_query_set.status == 2 %}
+                                                <code style="color:green">Success</code>
+                                            {% elif history_batch_query_set.status == 3 %}
+                                               <code>Failed</code>
+                                            {% elif history_batch_query_set.status == 4 %}
+                                              <code>Cancle</code>
+                                            {% elif history_batch_query_set.status == 5 %}
+                                                <code>Abort</code>
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    {% endif %}
+                                    {% if history_batch_query_set.status != 0 %}
+                                    <div class="col-md-6">
+                                        <span>Start Time :</span>
+                                        <span>{% localtime on %} {{history_batch_query_set.start_time|date:'d-m-Y H:i:s'}} {% endlocaltime %}</span>
+                                    </div>
+                                    {% endif %}
+                                    {% if history_batch_query_set.status != 0 and history_batch_query_set.status != 1 %}
+                                    <div class="col-md-6">
+                                        <span>End Time :</span>
+                                        <span>{% localtime on %} {{history_batch_query_set.complete_time|date:'d-m-Y H:i:s'}} {% endlocaltime %}</span>
+                                    </div>
+                                    {% endif %}
+                                    <div class="col-md-6">
+                                        <span>Migration Method:</span>
+                                        <span>{{history_batch_query_set.get_method_of_type_display}}</span>
+                                    </div>
+                                    {% if history_batch_query_set.status == 3 %}
+                                    <div class="col-md-6">
+                                        <span>Failed Reason :</span>
+                                        <span>{{history_batch_query_set.failed_reason}}</span>
+                                    </div>
+                                    {% endif %}
+                                    <div class="col-md-12" id='fir_details'  style="display:none;margin-top:5px;">
+                                        <hr>
+                                        <h7 class="card-title">Batch {{history_batch_query_set.batch_sr_num}} FIR Details </h7>
+                                        <input id='fir_details_status' value="0" hidden>
+                                        <p id='file_details_error'></p>
+                                        <div class="table-responsive" id='fir_details_table' style="margin-top: 10px;margin-botton: 10px;">
+                                            <table class="table mb-0"  id="fir_list_datatable">
+                                                <thead class="thead-dark">
+                                                    <tr>
+                                                        <th scope="col" width="20">ID</th>
+                                                        <th scope="col" width="80">FIR Number</th>
+                                                        <th scope="col" width="100">State</th>
+                                                        <th scope="col" width="100">District</th>
+                                                        <th scope="col" width="100">PS Code</th>
+                                                        <th scope="col" width="100">Year</th>
+                                                        <th scope="col" width="100">Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id='fir_details_table_tbody'></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class='col-md-12' id='migration_logs' {% if history_batch_query_set.status == 0 %} style="display:none;" {% endif %} >
+                            <hr>
+                            <input id='line_length' value='0'  hidden>
+                            <button class='btn btn-success' style="float:right; display: none;" id='logs_details_hide'>Hide logs</button>
+                            <button class='btn btn-danger' style="float:right;" id='logs_details_show'>Show logs</button>    
+                            <h6 class="card-title">Migrations logs</h6>  
+                            <pre id='data_in' style=' display: none; overflow-y: scroll;color:white;background: black;min-height: 100px;max-height:300px; padding-left: 10px;width: 100%;margin-top: 7%;'>
+                                
+                            </pre>    
+                        </div>
+                        
+                    </div>
+                </div>
+        </div>
+    </div>
+    </div>
+    
+</div>
+{% endblock content %}
+{% block page_js %}
+<script src="{% static 'js/migration/migration.js' %}"></script>
+ <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){
+        var is_migration_running = $('#is_migration_running').val();
+        if (is_migration_running != 0 && is_migration_running != 4){
+            get_migration_log()
+        }
+    })
+</script>
+
+{% endblock page_js%}

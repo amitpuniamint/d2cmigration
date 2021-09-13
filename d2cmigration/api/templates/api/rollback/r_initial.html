@@ -1,0 +1,599 @@
+{% extends 'api/base.html' %}
+
+{% load static %}
+{% load tz %}
+{% block title %}D2C RollBack: RollBack Initialize{% endblock title %}
+{% block css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.18/css/bootstrap-select.min.css" integrity="sha512-ARJR74swou2y0Q2V9k0GbzQ/5vJ2RBSoCWokg4zkfM29Fb3vZEQyv0iWBMW/yvKgyHSR/7D64pFMmU8nYmbRkg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.css">
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.js"></script>
+
+{% endblock css%}
+{% block userflex %}	
+{% endblock userflex %}
+{% block content %}
+<div class="app-content content">
+	<div class="content-overlay"></div>
+    <div class="header-navbar-shadow"></div>
+    <div class="content-wrapper">
+    	<div class="content-body">
+    		<div class="card">
+    			<div class="card-body">
+    				<div class='row'>
+                        {% if messages %}
+                        <div class='col-md-12'>
+                            {% for message in messages %}
+                                {% if message.tags == 'error' %}
+                                <div class="alert alert-danger" role="alert">{{ message }}</div>
+                                {% elif message.tags == 'success' %}
+                                <div class="alert alert-success" role="alert">{{ message }}</div>
+                                {% else %}
+                                <div class="alert alert-info" role="alert">{{ message }}</div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class='col-md-12'>      
+                            <button class='btn btn-danger btn-small'style="float:right;" id='create_rollback_show'>Create New RollBack</button>
+                            <button class='btn btn-success btn-small' style="float:right; display:none;" id='show_rollbak_status'>Show RollBack Status</button>
+                        </div>
+                        <div class="col-md-12" id='create_rollback_div' style="display:none;">      
+                            <h6 class="card-title" >D2C RollBack : Create Batch Rollback</h6>
+                            <p id='file_details_error' style="color:red"></p>
+                            <input id="fir_details_status" value="0" hidden="true" >
+
+                            <form action="" method="post">
+                                {% csrf_token %}
+                                <div class='row'>
+                                    <div class="col-md-12">
+                                        <div class="form-group col-md-4" style="float:left">
+                                            <div class="custom-control custom-radio">
+                                                <input type="radio" class="custom-control-input" name="search_type" id="search_1"  value="1" checked>
+                                                <label class="custom-control-label" for="search_1">Batch Wise</label>
+                                            </div>
+                                        </div>
+                                        <div class="form-group col-md-4" style="float:right">
+                                            <div class="custom-control custom-radio">
+                                                <input type="radio" class="custom-control-input" name="search_type" id="search_3"  value="3" >
+                                                <label class="custom-control-label" for="search_3">Single FIR</label>
+                                            </div>
+                                        </div>
+                                        <div class="form-group col-md-4" style="float:right">
+                                            <div class="custom-control custom-radio">
+                                                <input type="radio" class="custom-control-input" name="search_type" id="search_2"  value="2" >
+                                                <label class="custom-control-label" for="search_2">Batch FIR Wise</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-12" id='batch_wise' >
+                                        <div class="col-md-6" style="padding-right: 10px">
+                                            <div class="form-group">
+                                                <label for="firno">Migration Batch Number</label>
+                                                <select class="form-control selectpicker" id="batch_sr_num_1" name="batch_sr_num_1" data-live-search="true">
+                                                    <option data-tokens="null"  value = 'null' selected>Please Select Migration Batch</option>
+                                                    {% if bath_details %}
+                                                        {% for batch in bath_details %}
+                                                        <option data-tokens="{{batch}}"  value = '{{batch}}'>{{batch}}</option>
+                                                        {% endfor %}
+                                                    {% endif %}
+                                                </select>
+                                                <label><code>**</code>Please Select Migration Batch Number</label>
+                                           </div>
+                                        </div>
+                                        <button class='btn btn-danger rollback_submit' style="float:right;" > Create RollBack </button>
+                                    </div>
+                                    <div class="col-md-12" id='single_fir' style="display:none;">
+                                        <div class='row'>
+                                            <div class='col-md-12' id='ajax-error'></div>
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label for="state">STATE</label>
+
+                                                    <select class="custom-select form-control" id="state" name="state" required="">
+                                                        {% if request.session.is_staff is True and request.session.is_admin  is False %}
+                                                            <option value="{{state.state_cd}}">{{state.state}}</option>
+                                                        {% elif request.session.is_staff is True and request.session.is_admin  is True %}
+                                                        <option value="SS">Select State</option>
+                                                            {% for state_item in state_list %}
+                                                                <option value="{{state_item.state_cd}}">{{state_item.state}}</option>
+                                                            {% endfor %}
+                                                        {% endif %}
+                                                    </select>
+                                                    <label><code>**</code>Please Choose State</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label for="district">District</label>
+                                                    <select class="custom-select form-control" id="district" name="district" required="">
+                                                        {% if request.session.is_staff is True and request.session.is_admin  is False %}
+                                                            <option value="{{district.district_cd}}">{{district.district}}</option>
+                                                        {% elif request.session.is_staff is True and request.session.is_admin  is True %}
+                                                        <option value="SS">Select District</option>
+                                                        {% endif %}
+                                                    </select>
+                                                    <label><code>**</code>Please Choose District</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label for="pstation">Police Stations</label>
+                                                    <select class="custom-select form-control" id="pstation" name="pstation" required="">
+                                                        {% if request.session.is_staff is True and request.session.is_admin  is False %}
+                                                            <option value="{{police_station.ps_cd}}">{{police_station.ps}}</option>
+                                                        {% elif request.session.is_staff is True and request.session.is_admin  is True %}
+                                                        <option value="SS">Select Police Station</option>
+                                                        {% endif %}
+                                                    </select>
+                                                    <label><code>**</code>Please Choose Police Stations</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label for="year">Year</label>
+                                                    <select class="custom-select form-control" id="year" name="year" required="">
+                                                        <option value="SS">Select Year</option>
+                                                        <option value="ALL">ALL</option>
+                                                        {% for year_item in year %}
+                                                        <option value="{{year_item}}">{{year_item}}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                    <label><code>**</code>Please Choose Year</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label for="year">Fir Number</label>
+                                                    <input type="text" class="form-control" name="fir_reg_num" id="fir_reg_num" maxlength="4">
+                                                    <label><code>**</code>Please Enter FIR Number Year</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-12" style="margin-bottom: 10px;">
+                                                <span class='btn btn-success' style="float:right;" id='get_fir_list'> Get FIR </span>
+                                            </div>
+                                            <div class="col-md-12" id='single_fir_details_table' style="display: none;">
+                                                <div class="table-responsive"  style="margin-top: 10px;margin-botton: 10px;overflow-y: scroll; min-height: 200px; max-height: 300px;">
+                                                    <table class="table mb-0" id='single_fir_datatable'>
+                                                        <thead class="thead-dark">
+                                                            <tr>
+                                                                <th width="20">Select</th>
+                                                                <th width="100">FIR Number</th>
+                                                                <th width="100">Batch Number</th>
+                                                                <th width="100">Sate</th>
+                                                                <th width="100">District</th>
+                                                                <th width="100">PS Code</th>
+                                                                <th width="100">Year</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id='single_fir_details_table_tbody'>
+                                                    
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            <button class='btn btn-danger rollback_submit' style="float:right; margin-top:10px;" > Create RollBack </button>
+                                            </div>
+                                        </div>
+                                        
+                                    </div>
+                                    <div class="col-md-12" id='batch_fir_wise' style="display:none;">
+                                        <div class='row'>
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label for="migration_batch_number">Migration Batch Number</label>
+                                                    <div id = 'batch_sr_num_2_div'>
+                                                        <select class="form-control selectpicker" id="batch_sr_num_2"  name="batch_sr_num_2" data-live-search="true">
+                                                            <option data-tokens="null"  value = 'null' selected>Please Select Migration Batch</option>
+                                                            {% if bath_details %}
+                                                                {% for batch in bath_details %}
+                                                                    <option data-tokens="{{batch.batch_sr_num}}"  value = '{{batch.batch_sr_num}}'>{{batch.batch_sr_num}}</option>
+                                                                {% endfor %}
+                                                            {% endif %}
+                                                        </select>
+                                                        <label id='batch_sr_num_2_error'><code>**</code>Please Enter Migration Batch Number</label>
+                                                    </div>
+                                                    <h7 for="migration_batch_number" id='choose_batch_sr_num'></h7><br>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class='btn btn-danger' id='choose_another_batch' style="display:none;">Choose Another Batch</label>
+                                            </div>
+                                            <div class="col-md-12" id='fir_details_table' style="display:none;">
+                                                <div class="table-responsive"  style="margin-top: 10px;margin-botton: 10px;overflow-y: scroll; min-height: 200px; max-height: 300px;">
+                                                    <table class="table mb-0" id="fir_list_datatable">
+                                                        <thead class="thead-dark">
+                                                            <tr>
+                                                                <th width="20">ID</th>
+                                                                <th width="100">FIR Number</th>
+                                                                <th width="10">Select All</th>
+                                                                <th width="100">State</th>
+                                                                <th width="100">District</th>
+                                                                <th width="100">PS Code</th>
+                                                                <th width="50">Year</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id='fir_details_table_tbody'>
+                                                    
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                                <button class='btn btn-danger rollback_submit' style="float:right; margin-top: 10px;" > Create RollBack </button>
+                                            </div>
+                                        </div>
+                                        
+                                    </div>  
+                                </div>
+                            </form>
+                        </div>
+                        <div class="col-md-12 rollback_details" style="margin-bottom:10px" >      
+                            <h6 class="card-title" >D2C Migration/RollBack : On going Process</h6>
+                            <div class="table-responsive">
+                                <table class="table mb-0">
+                                    <thead class="thead-dark">
+                                        <tr>
+                                            <th scope="col">ID</th>
+                                            <th scope="col">Batch Number</th>
+                                            <th scope="col">Program Type</th>
+                                            <th scope="col">Current Status</th>
+                                            <th scope="col">Created Date</th>
+                                            <th scope="col">Started Date</th>
+                                            <th scope="col">User</th>
+                                            <th scope="col">Details</th> 
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    	{% if process_item %}
+                                    	{% for process_batch in process_item %}
+                                            <tr>
+                                                <td scope="col">{{forloop.counter}}</td>
+                                                <td scope="col">{{process_batch.batch_sr_num}}</td>
+                                                {% if process_batch.program_of_type == 'M' %}
+                                                <td scope="col"><label class='success' style='font-size: 16px;'>Migration</label></td>
+                                                {% elif process_batch.program_of_type == 'R' or process_batch.program_of_type == 'PR' %}
+                                                <td scope="col"><label class='danger' style='font-size: 16px;'>RollBack</label></td>
+                                                {% else %}
+                                                <td scope="col"><label class='default' style='font-size: 16px;'>{{process_batch.get_program_of_type_display}}</label></td>
+                                                {% endif %}
+                                                <td scope="col">{% if process_batch == 1 %}<label class='danger' style='font-size: 16px;'>On-Going</label>{% else %}<label class='warning' style='font-size: 16px;'>Queue</label>{% endif %}</td>
+                                                <td scope="col">{{process_batch.create_time|date:'d-m-Y H:i:s'|default:''}}</td>
+                                                <td scope="col">{{process_batch.start_time|date:'d-m-Y H:i:s'|default:''}}</td>
+                                                <td scope="col">{% if request.session.username == process_batch.user %} Self {% else %} {{process_batch.user}} {% endif %}</td>
+                                                {% if request.session.is_admin is True %}
+                                                    {% if process_batch.program_of_type == 'M' %}
+                                                        <td scope="col"><a href='/migration/details/{{process_batch.pk}}/' target="_blank"><button class='btn btn-small btn-success '>Details</button></a></td>
+                                                    {% elif process_batch.program_of_type == 'R' or process_batch.program_of_type == 'PR' %}
+                                                        <td scope="col"><a href='/rollback/details/{{process_batch.pk}}/' target="_blank"><button class='btn btn-small btn-success '>Details</button></a></td>
+                                                    {% endif %}
+                                                {% else %}
+                                                    {% if process_batch.user == request.session.username %}
+                                                        {% if process_batch.program_of_type == 'M' %}
+                                                            <td scope="col"><a href='/migration/details/{{process_batch.pk}}/' target="_blank"><button class='btn btn-small btn-success '>Details</button></a></td>
+                                                        {% elif process_batch.program_of_type == 'R' or process_batch.program_of_type == 'PR' %}
+                                                            <td scope="col"><a href='/rollback/details/{{process_batch.pk}}/' target="_blank"><button class='btn btn-small btn-success '>Details</button></a></td>
+                                                        {% endif %}
+                                                    {% else %}
+                                                {% endif %}
+                                                
+                                                --
+                                                {% endif %}
+                                            </tr>
+                                            {% endfor %}
+                                         {% else %}
+                                        <tr>
+                                            <th colspan="7"> No Migration or Rollback Batch is On-Going.</th>
+                                        </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class='col-md-12 rollback_details'>   
+                            <hr>   
+                            <h6 class="card-title" >D2C RollBack : Pending RollBack Process</h6>
+                            <div class="table-responsive" style="overflow-y: scroll;max-height:300px;">
+                            	<table class="table mb-0">
+                            		<thead class="thead-dark">
+                                        <tr>
+                                            <th scope="col">ID</th>
+                                            <th scope="col">Batch Number</th>
+                                            <th scope="col">User</th>
+                                            <th scope="col">Created</th>
+                                            <th scope="col">RollBack Type</th>
+                                            <th scope="col">Status</th>
+                                            <th scope="col">Cancle</th> 
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% if rollback_details %}
+                                            {% for rollback_batch in rollback_details %}
+                                            <tr>
+                                                <td scope="col">{{forloop.counter}}</td>
+                                                <td scope="col">{% if '[' in rollback_batch.batch_sr_num %} Multiple Batch <label class="danger btn btn-block-inline roll_batch_show" name='{{forloop.counter}}'>Show</label>
+                                                    <br>
+                                                    <span class='rollback_batch_number_{{forloop.counter}} rollback_batch_number' style="display:none;" >{{rollback_batch.batch_sr_num}}</span>
+                                                   {% else %} {{rollback_batch.batch_sr_num}} {% endif %}</td>
+                                                <td scope="col">{{rollback_batch.user.upper}}</td>
+                                                <td scope="col">{{rollback_batch.create_time|date:'d-m-Y H:i:s'|default:''}}</td>
+                                                <td scope="col">{{rollback_batch.get_program_of_type_display}}</td>
+                                                <td scope="col"><a href="/rollback/authentication/{{rollback_batch.pk}}/"><button class="btn btn-block btn-success">Start</button></a>
+                                                <td scope="col"><a href="/rollback/cancle/{{rollback_batch.pk}}/"><button class="btn btn-block btn-danger">Cancle</button></a>
+                                            </tr>
+                                            {% endfor %}
+                                        {% else %}
+                                        <tr>
+                                            <th colspan="6"> No Batch is Created. </th>
+                                        </tr>
+                                        {% endif %}
+                                    </tbody>
+                            	</table>
+                            </div>
+                        </div>
+    				</div>
+    			</div>
+    		</div>
+    	</div>
+    </div>
+</div>
+{% endblock %}
+{% block page_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.18/js/bootstrap-select.min.js" integrity="sha512-yDlE7vpGDP7o2eftkCiPZ+yuUyEcaBwoJoIhdXv71KZWugFqEphIS3PU60lEkFaz8RxaVsMpSvQxMBaKVwA5xg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<!-- Hide And Show Button Script -->
+<script type="text/javascript">
+    // Js For Create and Show Button
+    $('#create_rollback_show').click(function(){
+        $('#create_rollback_show').hide()
+        $('#show_rollbak_status').show()
+        $('.rollback_details').hide()
+        $('#create_rollback_div').show()
+    });
+
+    $('#show_rollbak_status').click(function(){
+        $('#show_rollbak_status').hide()
+        $('#create_rollback_show').show()
+        $('.rollback_details').show()
+        $('#create_rollback_div').hide()
+    });
+    // Js For Create and Show Button END
+
+    // Radio Button Js
+     $('#search_1').click(function(){
+        $('#batch_wise').show();
+        $('#batch_fir_wise').hide();
+        $('#single_fir').hide();
+    })
+    $('#search_2').click(function(){
+        $('#batch_fir_wise').show();
+        $('#batch_wise').hide();
+        $('#single_fir').hide();
+    })
+    $('#search_3').click(function(){
+        $('#single_fir').show();
+        $('#batch_wise').hide();
+        $('#batch_fir_wise').hide();
+    });
+    // Radio Button Js
+    // Create FIR List From Batch
+    $('#choose_another_batch').click(function(){
+        $('#batch_sr_num_2_div').show()
+        $('#choose_another_batch').hide()
+        $('#fir_details_table_tbody').html('')
+        $('#choose_batch_sr_num').html('')
+        $('#fir_details_table').hide()
+    })
+</script>
+<!-- Hide And Show Button Script END-->
+
+<!-- Get Batch Pending FIR List -->
+<script type="text/javascript">
+    $('#batch_sr_num_2').change(function(event){
+        fir_get_status = $('#fir_details_status').val()
+        if (fir_get_status == 0){
+            batch_sr_num = $(this).val();
+            if (batch_sr_num != 'null'){
+                $('#batch_sr_num_2_div').hide()
+                $('#choose_batch_sr_num').html(batch_sr_num)
+                $('#search_3').prop('disabled',true)
+                $('#search_1').prop('disabled',true)
+                get_migration_batch_fir_details(batch_sr_num);
+            }else{
+                $('#batch_sr_num_2_error').html('<code>** Please Enter Batch Number .</code>')
+            }
+        }else{
+            alert('Please Wait, We are still facthing FIR List.')
+        }
+    })
+
+    function get_migration_batch_fir_details(batch_sr_num){
+        $('#fir_details_status').val('2')
+        $('#file_details_error').html('');
+        $('#file_details_error').text('Please Wait, While We are fatching Record from Server.........')
+        $('#fir_list_datatable').DataTable().destroy();
+        $('#fir_list_datatable tbody').empty();
+        var batch_sr_num = batch_sr_num
+        var csrftoken = $('input[name="csrfmiddlewaretoken"]').val()
+        var AJAX_FILE = $.ajax({
+            type:"POST",
+            url: "/rollback/batch_fir/"+batch_sr_num+"/",
+            data:{'batch_sr_num':batch_sr_num,'csrfmiddlewaretoken':csrftoken},
+        }).done(function(result,status,AJAX_FILE){
+            console.log(AJAX_FILE)
+            if (result['status'] == true){
+                $('#choose_another_batch').show()
+                $('#fir_details_status').val('0');
+                $('#file_details_error').text('');
+                $('#fir_details_table').show()
+                var obj = jQuery.parseJSON( result['data'] );
+                jQuery.each(obj, function (i,val){
+                    $('#fir_details_table_tbody').append('<tr><td>'+(i+1)+'</td><td>'+val.fir_reg_num+'</td><td><input type="checkbox" id='+val.fir_reg_num+' name="fir_list_array" value='+val.fir_reg_num+'></td><td>'+val.state+'</td><td>'+val.district+'</td><td>'+val.ps+'</td><td>'+val.reg_year+'</td></tr>')
+                })
+            }else{
+                $('#file_details_error').text('**'+result['error']);
+                $('#fir_details_status').val('0');
+                $('#choose_batch_sr_num').text('');
+                $('#batch_sr_num_2_div').show();
+            }
+            $('#search_3').prop('disabled',false)
+            $('#search_1').prop('disabled',false)
+        }).fail(function(AJAX_FILE,status,err){
+            console.log(AJAX_FILE)
+            $('#file_details_error').text('** Due to System Error.Unable to Get Batch '+batch_sr_num+' FIR List.Please Contact With Technical Team')
+            $('#fir_details_status').val('0')
+            $('#choose_batch_sr_num').text('')
+            $('#batch_sr_num_2_div').show()
+            $('#search_3').prop('disabled',false)
+            $('#search_1').prop('disabled',false)
+        })
+    }
+</script>
+<!-- Get Batch Pending FIR List END-->
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.js"></script>
+
+
+{% if request.session.is_staff is True and request.session.is_admin is True %}
+<!-- GET DISTRICT & PS CODE -->
+<script type="text/javascript">
+    //Data Get of District police station
+    $('#state').change(function(){
+        $( "#district" ).html("<option value='SS'>Select District</option>");
+        $( "#pstation" ).html("<option value='SS'>Select Police Station</option>");
+        var state_code = $("option:selected", this).attr('value');
+        if (state_code != 'SS' && state_code != 'ALL'){
+        get_district(state_code);}else{
+            if(state_code == 'SS'){alert('Please Choose State.')};
+        }
+    });
+
+    function get_district(state_code){
+        $('#ajax-error').html('');
+        var AJAX_PS_CODE = $.ajax({
+            type:"GET",
+            url: "/district/"+state_code+"/",
+            data:{},
+        }).done(function(result,status,AJAX_FILE){
+            if (result['status'] == true){
+                jQuery.each(result['district_list'], function (i,val) {
+                    $( "#district" ).append("<option value="+val.district_cd+">"+val.district+"</option>");
+                });
+            }else{
+                var error = 'Not Able to get District List Due to System Error'
+                $('#ajax-error').append('<p><code>**'+error+'</code></p>')
+            }
+        }).fail(function(AJAX_FILE,status,err){
+            var error = 'Not Able to get District List. Error:'+err
+            $('#ajax-error').append('<p><code>**'+error+'</code></p>')
+        })
+    };
+
+    function get_police_station(state_code,district_code){
+        $('#ajax-error').html('');
+        var AJAX_PS_CODE = $.ajax({
+            type:"GET",
+            url: "/police_code/"+state_code+"/"+district_code+"/",
+            data:{},
+        }).done(function(result,status,AJAX_FILE){
+            if (result['status'] == true){
+                jQuery.each(result['pstation_list'], function (i,val) {
+                    $( "#pstation" ).append("<option value="+val.ps_cd+">"+val.ps+"</option>");
+                });
+            }else{
+                var error = 'Not Able to get Police Station List Due to System Error'
+                $('#ajax-error').append('<p><code>**'+error+'</code></p>')
+            }
+        }).fail(function(AJAX_FILE,status,err){
+            var error = 'Not Able to get Police Station List. Error:'+err
+            $('#ajax-error').append('<p><code>**'+error+'</code></p>')
+        })
+    };
+
+
+    
+    $('#district').change(function(){
+        $( "#pstation" ).html("<option value='SS'>Select Police Station</option>");
+        $( "#pstation" ).html("<option value='SS'>Select Police Station</option>");
+        var district_cd = $("option:selected", this).attr('value');
+        var state_code = $("option:selected",$('#state')).attr('value');
+        if (district_cd != 'SS' && district_cd != 'ALL'){
+        get_police_station(state_code,district_cd);}else{
+            if(district_cd == 'SS'){console.log('Please Choose')};
+        } 
+    })
+</script>
+<!-- GET DISTRICT & PS CODE END-->
+{% endif %}
+
+<!-- GET SINGLE FIR LIST -->
+<script type="text/javascript">
+    $('#get_fir_list').click(function(){
+        var state = $('#state').val()
+        var district = $('#district').val()
+        var ps_code = $('#pstation').val()
+        var year = $('#year').val()
+        var fir_reg_num = $('#fir_reg_num').val()
+    
+        if(state != 'SS'){
+            if(district != 'SS'){
+                if(ps_code != 'SS'){
+                    if(year != 'SS'){
+                        if(fir_reg_num != '' ){
+                            $('#search_2').prop('disabled',true)
+                            $('#search_1').prop('disabled',true)
+                            get_coustom_fir_details(state,district,ps_code,year,fir_reg_num)       
+                        }else{ $('#ajax-error').html('<code>**Please Choose FIR Number.</code>')}
+                    }else{ $('#ajax-error').html('<code>**Please Choose Year.</code>')}
+                }else{ $('#ajax-error').html('<code>**Please Choose Police Station.</code>')}
+            }else{$('#ajax-error').html('<code>**Please Choose District.</code>')}
+        }else{ $('#ajax-error').html('<code>**Please Choose State.</code>')}
+
+    
+    })
+
+    function get_coustom_fir_details(state,district,ps_code,year,fir_reg_num){
+        $('#ajax-error').html('<code> **Please Wait We are fatching Data from Server.</code>')
+        var csrftoken = $('input[name="csrfmiddlewaretoken"]').val()
+        var AJAX_FILE = $.ajax({
+            type:"post",
+            url: "/rollback/get_migration_single_fir_details/",
+            data:{'state':state,'district':district,'ps_code':ps_code,'year':year,'fir_reg_num':fir_reg_num,'csrfmiddlewaretoken':csrftoken},
+        }).done(function(result,status,AJAX_FILE){
+            if (result['status'] == true){
+                $('#single_fir_details_table').show();
+                jQuery.each(result['data'], function (i,val) {
+                    $('#single_fir_details_table_tbody').append('<tr><td><input type="checkbox" id='+val.fir_reg_num+' class="single_fir_list_array" name="single_fir_list_array" value='+val.fir_reg_num+'></td><td>'+val.fir_reg_num+'</td><td>'+val.batch_sr_num+'</td><td>'+val.state+'</td><td>'+val.district+'</td><td>'+val.ps_name+'</td><td>'+val.year+'</td></tr>')
+                    
+                })
+                $('#ajax-error').html('');                
+            }else{
+                $('#ajax-error').html('<code>**'+result['error']+'.</code>'); 
+            }
+        }).fail(function(AJAX_FILE,status,err){
+            console.log(AJAX_FILE)
+            $('#ajax-error').html('<code>**Unable to Get FIR Number Due to System Error.Please Contact With Your Technical Team.</code>')
+            $('#search_2').prop('disabled',false)
+            $('#search_1').prop('disabled',false)
+        })
+    }
+</script>
+<!-- GET SINGLE FIR LIST END -->
+<script type="text/javascript">
+$('.roll_batch_show').click(function(){
+    id_number = $(this).attr('name')
+    class_name = 'rollback_batch_number_'+id_number
+    value = $(this).text()
+    if (value == 'Show'){
+        $(this).text('Hide')
+        $('.'+class_name).show()
+    }else{
+        $(this).text('Show')
+        $('.'+class_name).hide()
+    }
+})
+$('.roll_batch_hide').click(function(){
+    id_number = $(this).attr('name')
+    class_name = 'rollback_batch_number_'+id_number
+    alert($(this).attr('name'))
+})
+
+</script>
+
+{% endblock page_js%}

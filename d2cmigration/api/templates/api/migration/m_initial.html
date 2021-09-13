@@ -1,0 +1,376 @@
+{% extends 'api/base.html' %}
+{% load static %}
+{% load tz %}
+{% block title %}D2C Migration: Migration Initialize{% endblock title %}
+{% block css %}
+<style type="text/css">
+    .has_error{
+        color: red;
+    }
+</style>
+{% endblock css%}
+{% block userflex %}	
+{% endblock userflex %}
+{% block content %}
+<div class="app-content content">
+	<div class="content-overlay"></div>
+    <div class="header-navbar-shadow"></div>
+    <div class="content-wrapper">
+    	<div class="content-body">
+    		<div class="card">
+    			<div class="card-body">
+    				<div class='row'>
+                        {% if messages %}
+                        <div class='col-md-12'>
+                            {% for message in messages %}
+                                {% if message.tags == 'error' %}
+                                <div class="alert alert-danger" role="alert">{{ message }}</div>
+                                {% elif message.tags == 'success' %}
+                                <div class="alert alert-success" role="alert">{{ message }}</div>
+                                {% else %}
+                                <div class="alert alert-info" role="alert">{{ message }}</div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class='col-md-12'>      
+                            <button class='btn btn-danger btn-small'style="float:right;" id='create_batch_show'>Create New Migration Batch</button>
+                            <button class='btn btn-success btn-small' style="float:right; display:none;" id='create_batch_hide'>Hide Create Page</button>
+                        </div>
+    					<div class="col-md-12" id='create_batch_div' style="display:none;">      
+                            <h6 class="card-title" >DigiCAS Migration : Create Migration Batch</h6>
+                            <form action="" method="post">
+                                {% csrf_token %}
+                                <div class='row'>
+                                    <div class="col-md-12">
+                                        <div class="form-group col-md-6" style="float:right">
+                                            <div class="custom-control custom-radio">
+                                                <input type="radio" class="custom-control-input" name="search_type" id="search_1"  value="2" checked>
+                                                <label class="custom-control-label" for="search_1">Custom Choose</label>
+                                            </div>
+                                        </div>
+                                        <div class="form-group col-md-6" style="float:right">
+                                            <div class="custom-control custom-radio">
+                                                <input type="radio" class="custom-control-input" name="search_type" id="search_2"  value="1" >
+                                                <label class="custom-control-label" for="search_2">ALL FIR</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-12" id='all_fir' style="display:none;">
+                                        <h5> You have Selete All FIR Select </h5>
+                                        <div class="col-md-12" style="margin-bottom: 10px;">
+                                    			<button class='btn btn-danger' style="float:right;"> Create Batch </button>
+                                		</div>
+                                    </div>
+                                    <div class="col-md-12" id='custom_fir' >
+                                    	
+                                        <div class='row'>
+                                        	<div class='col-md-12' id='ajax-error'></div>
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label for="state">STATE</label><code>**</code>
+                                                    <select class="custom-select form-control remove_error" id="state" name="state" required="">
+                                                        {% if request.session.is_admin is True %}
+                                                            <option value="SS">Select State</option>
+                                                            <option value="ALL">ALL</option>
+                                                            {% for state_item in state_list %}
+                                                                    <option value="{{state_item.state_cd}}" name>{{state_item.state}}</option>
+                                                            {% endfor %}
+                                                        {% else %}
+                                                        <option value="{{state.state_cd}}">{{state.state}}</option>
+                                                        {% endif %}
+                                                        
+                                                    </select>
+                                                    <label>Please Choose State</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label for="district">District</label><code>**</code>
+                                                    <select class="custom-select form-control remove_error" id="district" name="district" required="">
+                                                        {% if request.session.is_admin is True %}
+                                                            <option value="SS">Select District</option>
+                                                        {% else %}
+                                                        <option value="{{district.district_cd}}">{{district.district}}</option>
+                                                        {% endif %}
+                                                    </select>
+                                                    <label>Please Choose District</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label for="pstation">Police Stations</label><code>**</code>
+                                                    <select class="custom-select form-control remove_error" id="pstation" name="pstation" required="">
+                                                        {% if request.session.is_admin is True %}
+                                                            <option value="SS">Select Police Stations</option>
+                                                        {% else %}
+                                                        <option value="{{ps_station.ps_cd}}">{{ps_station.ps}}</option>
+                                                        {% endif %}
+                                                    </select>
+                                                    <label>Please Choose Police Stations</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label for="year">Year</label><code>**</code>
+                                                    <select class="custom-select form-control remove_error" id="year" name="year" required="">
+                                                        <option value="SS">Select Year</option>
+                                                        <option value="ALL">ALL</option>
+                                                        {% for year_item in year %}
+                                                        <option value="{{year_item}}">{{year_item}}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                    <label>Please Choose Year</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label for="fir_sr_no">FIR Number</label>
+                                                    <input type="number" id="fir_sr_no" class="form-control" name="fir_sr_no" placeholder="Please Enter FIR Number.">
+                                                    <label>Please Enter FIR Number</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-12" style="margin-bottom: 10px;">
+                                    			<button class='btn btn-danger' id='submit' style="float:right;"> Create Batch </button>
+                                			</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                            </form>
+                        </div>
+                        <div class="col-md-12" style="margin-bottom:10px">      
+                            <h6 class="card-title" >DigiCAS Migration : On going Migration Process</h6>
+                            <div class="table-responsive">
+                                <table class="table mb-0">
+                                    <thead class="thead-dark">
+                                        <tr>
+                                            <th scope="col">ID</th>
+                                            <th scope="col">Batch Number</th>
+                                            <th scope="col">Program Type</th>
+                                            <th scope="col">Created Date</th>
+                                            <th scope="col">Started Date</th>
+                                            <th scope="col">Username</th>
+                                            <th scope="col">Details</th> 
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    	{% if is_running %}
+                                    	{% for running_batch in is_running %}
+                                            <tr>
+                                            	
+                                                <td scope="col">{{forloop.counter}}</td>
+                                                <td scope="col">{{running_batch.batch_sr_num}}</td>
+                                                {% if running_batch.program_of_type == 'M' %}
+                                                <td scope="col"><label class='success' style='font-size: 16px;'>Migration</label></td>
+                                                {% elif running_batch.program_of_type == 'R'  %}
+                                                <td scope="col"><label class='danger' style='font-size: 16px;'>RollBack</label></td>
+                                                {% elif running_batch.program_of_type == 'PR'  %}
+                                                <td scope="col"><label class='danger' style='font-size: 16px;'>Partial RollBack</label></td>
+                                                {% else %}
+                                                <td scope="col"><label class='default' style='font-size: 16px;'>{{running_batch.get_program_of_type_display}}</label></td>
+                                                {% endif %}
+                                                <td scope="col">{{running_batch.create_time|date:'d-m-Y H:i:s'|default:''}}</td>
+                                                <td scope="col">{{running_batch.start_time|date:'d-m-Y H:i:s'|default:''}}</td>
+                                                <td scope="col">{{running_batch.user}}</td>
+                                                {% if request.session.is_admin is True %}
+                                                    {% if running_batch.program_of_type == 'M' %}
+                                                        <td scope="col"><a href='/migration/details/{{running_batch.pk}}/' target="_blank"><button class='btn btn-small btn-success '>Details</button></a></td>
+                                                    {% elif running_batch.program_of_type == 'R' or running_batch.program_of_type == 'PR' %}
+                                                        <td scope="col"><a href='/rollback/details/{{running_batch.pk}}/' target="_blank"><button class='btn btn-small btn-success '>Details</button></a></td>
+                                                    {% endif %}
+                                                {% else %}
+                                                    {% if running_batch.user == request.session.username %}
+                                                        {% if running_batch.program_of_type == 'M' %}
+                                                            <td scope="col"><a href='/migration/details/{{running_batch.pk}}/' target="_blank"><button class='btn btn-small btn-success '>Details</button></a></td>
+                                                        {% elif running_batch.program_of_type == 'R' or running_batch.program_of_type == 'PR' %}
+                                                            <td scope="col"><a href='/rollback/details/{{running_batch.pk}}/' target="_blank"><button class='btn btn-small btn-success '>Details</button></a></td>
+                                                        {% endif %} 
+                                                    {% else %}
+                                                        ---
+                                                    {% endif %}
+                                                {% endif %} 
+                                            </tr>
+                                            {% endfor %}
+                                         {% else %}
+                                        <tr>
+                                            <th colspan="7"> No Batch is Created. </th>
+                                        </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class='col-md-12'>      
+                            <h6 class="card-title" >DigiCAS Migration : Pending Migration Process</h6>
+                            <div class="table-responsive" style="overflow-y: scroll;max-height:300px;">
+                            	<table class="table mb-0">
+                            		<thead class="thead-dark">
+                                        <tr>
+                                            <th scope="col">ID</th>
+                                            <th scope="col">Batch Number</th>
+                                            <th scope="col">User</th>
+                                            <th scope="col">Created </th>
+                                            <th scope="col">Status</th>
+                                            <th scope="col">Cancle</th> 
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% if history_query_get %}
+                                            {% for migration_batch in history_query_get %}
+                                            <tr>
+                                                <td scope="col">{{forloop.counter}}</td>
+                                                <td scope="col">{{migration_batch.batch_sr_num}}</td>
+                                                {% if migration_batch.user == request.session.username %}
+                                                <td scope="col">SELF</td>
+                                                {% else %}
+                                                <td scope="col">{{migration_batch.user|upper}}</td>
+                                                {% endif %}
+                                                <td scope="col">{{migration_batch.create_time|date:'d-m-Y H:i:s'|default:''}}</td>
+                                                <td scope="col"><a href="/migration/authentication/{{migration_batch.pk}}/"><button class="btn btn-block btn-success">Start</button></a>
+                                                <td scope="col"><a href="/migration/cancle/{{migration_batch.pk}}/"><button class="btn btn-block btn-danger">Cancle</button></a>
+                                            </tr>
+                                            {% endfor %}
+                                        {% else %}
+                                        <tr>
+                                            <th colspan="6"> No Batch is Created. </th>
+                                        </tr>
+                                        {% endif %}
+                                    </tbody>
+                            	</table>
+                            </div>
+                        </div>
+    				</div>
+    			</div>
+    		</div>
+    	</div>
+    </div>
+</div>
+{% endblock %}
+{% block page_js %}
+<script type="text/javascript">
+	$('#submit').click(function(event){
+		console.log($('input [name=search_type] checked').val() )
+		state = $('#state').val()
+		district = $('#district').val()
+		ps_cd = $('#pstation').val() 
+		year = $('#year').val()
+		$('#ajax-error').html('')
+		console.log(state,district,ps_cd,year)
+		if (state != 'SS' && district != 'SS' && ps_cd != 'SS' && year != 'SS'){
+			return true;
+		}else{
+			if(state == 'SS'){
+				$('#ajax-error').append('<p><code>Please Choose State </code></p>')
+			}else if(district == 'SS'){
+				$('#ajax-error').append('<p><code>Please Choose District </code></p>')
+			}else if(ps_cd == 'SS'){
+				$('#ajax-error').append('<p><code>Please Choose Police Station</code></p>')
+			};
+			if(year == 'SS'){
+				$('#ajax-error').append('<p><code>Please Choose Year </code></p>')	
+			}
+			return false;
+		}
+		
+	})
+
+    
+
+	$('#create_batch_show').click(function(){
+		$('#create_batch_div').show()
+		$('#create_batch_hide').show()
+		$('#create_batch_show').hide()
+	});
+
+	$('#create_batch_hide').click(function(){
+		$('#create_batch_show').show()
+		$('#create_batch_hide').hide()
+		$('#create_batch_div').hide()
+	});
+    $('#search_2').click(function(){
+        $('#all_fir').show();
+        $('#custom_fir').hide();
+    });
+    $('#search_1').click(function(){
+        $('#custom_fir').show();
+        rest_custom();
+        $('#all_fir').hide();
+    });
+
+
+    
+
+</script>
+
+{% if request.session.is_admin is True %}
+<!-- STATE DISTRICT PS ADMIN -->
+<script type="text/javascript">
+   
+    $('#state').change(function(){
+        $( "#district" ).html("<option value='SS'>Select District</option><option value='ALL'>ALL</option>");
+        $( "#pstation" ).html("<option value='SS'>Select Police Station</option>");
+        var state_code = $("option:selected", this).attr('value');
+        if (state_code != 'SS' && state_code != 'ALL'){
+        get_district(state_code);
+        }else{
+            if(state_code == 'SS'){alert('Please Choose State.')};
+            return false;
+        }
+    });
+    function get_district(state_code){
+        $('#ajax-error').html('');
+        var AJAX_PS_CODE = $.ajax({
+            type:"GET",
+            url: "/district/"+state_code+"/",
+            data:{},
+        }).done(function(result,status,AJAX_FILE){
+            if (result['status'] == true){
+                jQuery.each(result['district_list'], function (i,val) {
+                    $( "#district" ).append("<option value="+val.district_cd+">"+val.district+"</option>");
+                });
+            }else{
+                var error = 'Not Able to get District List Due to System Error'
+                $('#ajax-error').append('<p><code>**'+error+'</code></p>')
+            }
+        }).fail(function(AJAX_FILE,status,err){
+            var error = 'Not Able to get District List. Error:'+err
+            $('#ajax-error').append('<p><code>**'+error+'</code></p>')
+        })
+    };
+
+    $('#district').change(function(){
+        $( "#pstation" ).html("<option value='SS'>Select Police Station</option><option value='ALL'>ALL</option>");
+        var district_cd = $("option:selected", this).attr('value');
+        var state_code = $("option:selected",$('#state')).attr('value');
+        if (district_cd != 'SS' && district_cd != 'ALL'){
+        get_police_station(state_code,district_cd);}else{
+            if(district_cd == 'SS'){alert('Please Choose District.')};
+        } 
+    })
+
+    function get_police_station(state_code,district_code){
+        $('#ajax-error').html('');
+        var AJAX_PS_CODE = $.ajax({
+            type:"GET",
+            url: "/police_code/"+state_code+"/"+district_code+"/",
+            data:{},
+        }).done(function(result,status,AJAX_FILE){
+            if (result['status'] == true){
+                jQuery.each(result['pstation_list'], function (i,val) {
+                    $( "#pstation" ).append("<option value="+val.ps_cd+">"+val.ps+"</option>");
+                });
+            }else{
+                var error = 'Not Able to get Police Station List Due to System Error'
+                $('#ajax-error').append('<p><code>**'+error+'</code></p>')
+            }
+        }).fail(function(AJAX_FILE,status,err){
+            var error = 'Not Able to get Police Station List. Error:'+err
+            $('#ajax-error').append('<p><code>**'+error+'</code></p>')
+        })
+    };
+</script>
+<!-- END STATE DISTRICT PS ADMIN -->
+{% endif  %}
+{% endblock page_js%}
